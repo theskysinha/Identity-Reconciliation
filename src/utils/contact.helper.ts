@@ -47,8 +47,8 @@ export const resolveContact = async (email?: string, phone?: string) => {
   });
 
   // Check if it's a new combination (email+phone)
-  const existingCombo = allContacts.some(c => c.email === email && c.phoneNumber === phone);
-  if (!existingCombo) {
+  const existingCombo = allContacts.some(c => (email ? c.email === email : true) && (phone ? c.phoneNumber === phone : true));
+  if (!existingCombo && (email || phone)) {
     await prisma.contact.create({
       data: {
         email,

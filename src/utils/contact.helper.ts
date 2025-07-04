@@ -36,6 +36,23 @@ export const resolveContact = async (email?: string, phone?: string) => {
     relatedIds.add(contact.linkedId ?? contact.id);
   }
 
+  // If there are multiple primary contacts, merge them by linking to oldest
+  if (relatedIds.size > 1) {
+    const sorted = [...relatedIds].sort(); // oldest id first
+    const primaryIdToKeep = sorted[0];
+
+    await prisma.contact.updateMany({
+      where: {
+        id: { in: sorted.slice(1) },
+        linkPrecedence: "primary"
+      },
+      data: {
+        linkPrecedence: "secondary",
+        linkedId: primaryIdToKeep
+      }
+    });
+  }
+
   const primaryId = Math.min(...Array.from(relatedIds));
   const allContacts = await prisma.contact.findMany({
     where: {
@@ -47,7 +64,9 @@ export const resolveContact = async (email?: string, phone?: string) => {
   });
 
   // Check if it's a new combination (email+phone)
-  const existingCombo = allContacts.some(c => (email ? c.email === email : true) && (phone ? c.phoneNumber === phone : true));
+  const emailExists = email ? allContacts.some(c => c.email === email) : true;
+  const phoneExists = phone ? allContacts.some(c => c.phoneNumber === phone) : true;
+  const existingCombo = emailExists && phoneExists;
   if (!existingCombo && (email || phone)) {
     await prisma.contact.create({
       data: {

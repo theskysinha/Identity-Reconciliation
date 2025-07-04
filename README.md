@@ -53,7 +53,7 @@ The server will be running on `http://localhost:8000`.
 
 ### Method: `POST`
 
-### URL: `http://localhost:3000/identify`
+### URL: `http://localhost:8000/identify`
 
 ### Request Body
 
